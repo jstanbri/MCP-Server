@@ -1,6 +1,7 @@
 # MCP-Server
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/jstanbri/MCP-Server)](https://github.com/jstanbri/MCP-Server/releases)
+[![CI](https://github.com/jstanbri/MCP-Server/actions/workflows/ci.yml/badge.svg)](https://github.com/jstanbri/MCP-Server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 MCP-Server built for clients with Azure SQL / Cosmos datastores
@@ -90,6 +91,45 @@ cargo build --release
 
 The compiled binary is placed in `target/debug/azure-mcp-server` or
 `target/release/azure-mcp-server`.
+
+---
+
+## Docker
+
+### Build the image
+
+```bash
+docker build -t azure-mcp-server .
+```
+
+### Configure environment variables
+
+Copy the provided sample file and fill in your values:
+
+```bash
+cp .env-sample .env
+# edit .env with your connection strings / keys
+```
+
+> **Note:** `.env` is listed in `.gitignore` and will never be committed to the
+> repository.  Use `.env-sample` as a reference template.
+
+### Run the container
+
+Pass the `.env` file to the container at runtime:
+
+```bash
+# Both data stores
+docker run --rm -i --env-file .env azure-mcp-server
+
+# MSSQL only (override individual variables)
+docker run --rm -i \
+  -e MSSQL_CONNECTION_STRING="server=tcp:myserver.database.windows.net,1433;..." \
+  azure-mcp-server
+```
+
+The container reads from **stdin** and writes MCP JSON-RPC responses to
+**stdout**, matching the stdio transport expected by MCP clients.
 
 ---
 
