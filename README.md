@@ -1,6 +1,6 @@
 # MCP-Server
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jstanbri/MCP-Server)](https://github.com/jstanbri/MCP-Server/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jstanbri/MCP-Server?include_prereleases&sort=date)](https://github.com/jstanbri/MCP-Server/releases)
 [![CI](https://github.com/jstanbri/MCP-Server/actions/workflows/ci.yml/badge.svg)](https://github.com/jstanbri/MCP-Server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
