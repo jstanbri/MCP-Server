@@ -9,7 +9,10 @@ use serde::Deserialize;
 use std::sync::Arc;
 
 use crate::config::Config;
-use crate::{cosmos, mssql};
+use crate::{
+    cosmos::{self, DEFAULT_MAX_ITEMS},
+    mssql::{self, DEFAULT_MAX_ROWS},
+};
 
 // ---------------------------------------------------------------------------
 // Tool parameter types
@@ -123,7 +126,7 @@ impl AzureMcpServer {
             .require_mssql()
             .map_err(|e| e.to_string())?;
 
-        let max_rows = params.max_rows.unwrap_or(500);
+        let max_rows = params.max_rows.unwrap_or(DEFAULT_MAX_ROWS);
 
         mssql::execute_query(cfg, &params.query, max_rows)
             .await
@@ -206,7 +209,7 @@ impl AzureMcpServer {
             })?
             .to_string();
 
-        let max_items = params.max_items.unwrap_or(100);
+        let max_items = params.max_items.unwrap_or(DEFAULT_MAX_ITEMS);
 
         cosmos::query_items(
             cfg,

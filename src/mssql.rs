@@ -6,6 +6,11 @@ use tokio_util::compat::TokioAsyncWriteCompatExt;
 
 use crate::config::MssqlConfig;
 
+/// Default number of rows returned when the caller does not specify `max_rows`.
+pub const DEFAULT_MAX_ROWS: u64 = 500;
+/// Hard upper limit on rows to prevent runaway reads.
+pub const HARD_MAX_ROWS: u64 = 10_000;
+
 /// Open a new tiberius client from an ADO.NET connection string.
 async fn connect(cfg: &MssqlConfig) -> Result<Client<tokio_util::compat::Compat<TcpStream>>> {
     let config = Config::from_ado_string(&cfg.connection_string)
@@ -63,7 +68,10 @@ fn column_data_to_json(data: &ColumnData<'static>) -> Value {
                 Value::String(b.iter().map(|byte| format!("{byte:02x}")).collect::<String>())
             })
             .unwrap_or(Value::Null),
-        // Temporal types: render as strings via Display
+        // Temporal types: tiberius stores these as internal integer encodings and
+        // does not expose a Display implementation.  We use the Debug representation
+        // which includes the raw field values.  For human-readable output, cast to
+        // varchar in your SQL: CONVERT(varchar, column, 127) for ISO 8601.
         ColumnData::DateTime(v) => v
             .map(|d| Value::String(format!("{d:?}")))
             .unwrap_or(Value::Null),
@@ -123,13 +131,21 @@ pub async fn list_tables(cfg: &MssqlConfig) -> Result<Value> {
 
 /// Execute an arbitrary SQL query and return results as a JSON array of row objects.
 ///
-/// `max_rows` caps the number of rows returned (default 500, maximum 10 000).
+/// `max_rows` caps the number of rows returned (default [`DEFAULT_MAX_ROWS`],
+/// maximum [`HARD_MAX_ROWS`]).
+///
+/// # Security note
+/// The `sql` parameter is passed directly to the database after being wrapped
+/// in a `SELECT TOP … FROM (…)` subquery.  Callers are responsible for
+/// ensuring the query is safe to execute against the target database.  The
+/// database user configured via `MSSQL_CONNECTION_STRING` should use the
+/// principle of least privilege (read-only where possible).
 pub async fn execute_query(cfg: &MssqlConfig, sql: &str, max_rows: u64) -> Result<Value> {
-    let max_rows = max_rows.min(10_000);
+    let max_rows = max_rows.min(HARD_MAX_ROWS);
 
     let mut client = connect(cfg).await?;
 
-    // Wrap with TOP to avoid accidentally reading millions of rows.
+    // Wrap the caller-supplied query in a TOP to prevent reading millions of rows.
     let limited_sql = format!(
         "SELECT TOP ({max_rows}) * FROM ({sql}) AS __mcp_query__"
     );

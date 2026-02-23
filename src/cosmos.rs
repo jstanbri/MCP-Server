@@ -6,6 +6,11 @@ use serde_json::Value;
 
 use crate::config::CosmosConfig;
 
+/// Default number of items returned when the caller does not specify `max_items`.
+pub const DEFAULT_MAX_ITEMS: u32 = 100;
+/// Hard upper limit on items to prevent runaway reads.
+pub const HARD_MAX_ITEMS: u32 = 5_000;
+
 /// Build a `CosmosClient` from the supplied configuration.
 ///
 /// Key-based authentication is used when `COSMOS_KEY` is set.  For managed
@@ -74,8 +79,8 @@ pub async fn list_containers(cfg: &CosmosConfig, database: &str) -> Result<Value
 ///
 /// `partition_key` scopes the query to a single logical partition.  Pass
 /// `None` to run a cross-partition query (costs more RUs but is sometimes
-/// necessary).  `max_items` caps the number of items returned (default 100,
-/// max 5 000).
+/// necessary).  `max_items` caps the number of items returned (default
+/// [`DEFAULT_MAX_ITEMS`], max [`HARD_MAX_ITEMS`]).
 pub async fn query_items(
     cfg: &CosmosConfig,
     database: &str,
@@ -84,10 +89,12 @@ pub async fn query_items(
     partition_key: Option<&str>,
     max_items: u32,
 ) -> Result<Value> {
-    let max_items = max_items.min(5_000);
+    let max_items = max_items.min(HARD_MAX_ITEMS);
     let client = build_client(cfg)?;
     let container_client = client.database_client(database).container_client(container);
 
+    // PartitionKey::EMPTY signals a cross-partition (fan-out) query to the SDK.
+    // A non-empty key scopes the query to a single logical partition.
     let pk: azure_data_cosmos::PartitionKey = match partition_key {
         Some(key) => azure_data_cosmos::PartitionKey::from(key.to_string()),
         None => azure_data_cosmos::PartitionKey::EMPTY,

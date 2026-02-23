@@ -56,6 +56,8 @@ be configured.
 server=tcp:myserver.database.windows.net,1433;database=mydb;user id=myuser;password=mypassword;encrypt=true;trustservercertificate=false
 
 # Windows integrated auth (local / on-prem)
+# ⚠️ TrustServerCertificate=true disables TLS certificate validation.
+# Use only in development/testing environments, never in production.
 server=tcp:localhost,1433;IntegratedSecurity=true;TrustServerCertificate=true
 
 # Named instance
