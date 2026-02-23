@@ -1,0 +1,48 @@
+[package]
+name = "azure-mcp-server"
+version = "0.1.0"
+edition = "2021"
+description = "MCP Server providing AI-accessible tools for Azure MSSQL and Cosmos DB private data stores"
+license = "MIT"
+
+[[bin]]
+name = "azure-mcp-server"
+path = "src/main.rs"
+
+[dependencies]
+# MCP server SDK (Model Context Protocol — Rust SDK by the modelcontextprotocol project)
+rmcp = { version = "0.16.0", features = ["server", "transport-io", "macros"] }
+
+# Azure MSSQL driver (TDS / SQL Server protocol)
+# tds73 enables the SQL Server 7.3 temporal types (Time, Date, DateTime2, DateTimeOffset)
+tiberius = { version = "0.12.3", default-features = false, features = ["rustls", "chrono", "tds73"] }
+
+# Azure Cosmos DB SDK
+azure_data_cosmos = { version = "0.30.0", features = ["key_auth"] }
+
+# Shared Azure Core types (e.g. Secret)
+azure_core = "0.31.0"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Bridge between tokio and futures AsyncRead/Write (required by tiberius with tokio)
+tokio-util = { version = "0.7", features = ["compat"] }
+
+# Error handling
+anyhow = "1.0"
+
+# Serialisation
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# JSON schema generation (required for rmcp Parameters/tool macros)
+schemars = "1.0"
+futures = "0.3"
+
+# Structured logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
