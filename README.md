@@ -1,2 +1,149 @@
 # MCP-Server
 MCP-Server built for clients with Azure SQL / Cosmos datastores
+
+## Overview
+
+`azure-mcp-server` is a **Model Context Protocol (MCP)** server written in Rust
+that gives AI assistants (Claude, Copilot, etc.) secure, structured access to
+private Azure data stores:
+
+| Data Store | Protocol |
+|---|---|
+| Azure SQL / MSSQL | TDS (via [tiberius](https://crates.io/crates/tiberius)) |
+| Azure Cosmos DB (NoSQL API) | HTTPS (via [azure_data_cosmos](https://crates.io/crates/azure_data_cosmos)) |
+
+The server communicates over **stdio** using the
+[MCP JSON-RPC protocol](https://spec.modelcontextprotocol.io/) implemented by
+the [rmcp](https://crates.io/crates/rmcp) Rust SDK from the
+`modelcontextprotocol` project.
+
+---
+
+## Tools exposed
+
+### Azure MSSQL
+
+| Tool | Description |
+|---|---|
+| `mssql_list_tables` | List all user tables (`TABLE_SCHEMA`, `TABLE_NAME`) |
+| `mssql_execute_query` | Execute an arbitrary SQL query; results capped at `max_rows` (default 500, max 10 000) |
+
+### Azure Cosmos DB
+
+| Tool | Description |
+|---|---|
+| `cosmos_list_databases` | List all databases in the account |
+| `cosmos_list_containers` | List all containers in a database |
+| `cosmos_query_items` | Run a Cosmos SQL-API query against a container |
+
+---
+
+## Configuration
+
+All configuration is via environment variables.  At least one data store must
+be configured.
+
+### Azure MSSQL
+
+| Variable | Required | Description |
+|---|---|---|
+| `MSSQL_CONNECTION_STRING` | Yes | ADO.NET connection string |
+
+**Example connection strings:**
+
+```
+# SQL Server / Azure SQL (username + password)
+server=tcp:myserver.database.windows.net,1433;database=mydb;user id=myuser;password=mypassword;encrypt=true;trustservercertificate=false
+
+# Windows integrated auth (local / on-prem)
+server=tcp:localhost,1433;IntegratedSecurity=true;TrustServerCertificate=true
+
+# Named instance
+server=tcp:myserver\INSTANCE,1433;database=mydb;user id=myuser;password=mypassword
+```
+
+### Azure Cosmos DB
+
+| Variable | Required | Description |
+|---|---|---|
+| `COSMOS_ENDPOINT` | Yes | Account endpoint, e.g. `https://myaccount.documents.azure.com:443/` |
+| `COSMOS_KEY` | Yes | Primary or secondary account key |
+| `COSMOS_DEFAULT_DATABASE` | No | Default database (used when the tool `database` param is omitted) |
+
+---
+
+## Building
+
+```bash
+# debug build
+cargo build
+
+# release build (recommended for production)
+cargo build --release
+```
+
+The compiled binary is placed in `target/debug/azure-mcp-server` or
+`target/release/azure-mcp-server`.
+
+---
+
+## Running
+
+```bash
+# Example: MSSQL only
+MSSQL_CONNECTION_STRING="server=tcp:localhost,1433;..." \
+  ./target/release/azure-mcp-server
+
+# Example: Cosmos DB only
+COSMOS_ENDPOINT="https://myaccount.documents.azure.com:443/" \
+COSMOS_KEY="my_account_key==" \
+COSMOS_DEFAULT_DATABASE="mydb" \
+  ./target/release/azure-mcp-server
+
+# Example: both
+MSSQL_CONNECTION_STRING="..." \
+COSMOS_ENDPOINT="..." \
+COSMOS_KEY="..." \
+  ./target/release/azure-mcp-server
+```
+
+Logs are written to **stderr** (so they don't interfere with the stdio MCP
+transport).  Set `RUST_LOG=azure_mcp_server=debug` for verbose output.
+
+---
+
+## Connecting to an MCP client
+
+Add the server to your MCP client configuration.  Example for
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "azure-data": {
+      "command": "/path/to/azure-mcp-server",
+      "env": {
+        "MSSQL_CONNECTION_STRING": "server=tcp:...",
+        "COSMOS_ENDPOINT": "https://...",
+        "COSMOS_KEY": "..."
+      }
+    }
+  }
+}
+```
+
+---
+
+## Development
+
+```bash
+# Run unit tests
+cargo test
+
+# Lint
+cargo clippy
+
+# Check formatting
+cargo fmt --check
+```
+
