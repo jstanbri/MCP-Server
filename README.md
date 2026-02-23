@@ -184,8 +184,18 @@ transport).  Set `RUST_LOG=azure_mcp_server=debug` for verbose output.
 
 ## Connecting to an MCP client
 
-Add the server to your MCP client configuration.  Example for
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+This server uses the **stdio transport**: there is no URL or network port.
+The MCP client launches the server as a child process and communicates with it
+directly over the process's stdin / stdout.  The client configuration tells the
+client *how to start* the server, not *where to reach* it.
+
+### Native binary
+
+If you built the binary locally with `cargo build --release`, point the client
+at the compiled executable and supply your credentials as environment variables.
+
+Example for **Claude Desktop**
+(`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -201,6 +211,66 @@ Add the server to your MCP client configuration.  Example for
   }
 }
 ```
+
+### Docker container
+
+When you use the pre-built Docker image, the credentials come from your `.env`
+file via `--env-file`.  You do **not** need to repeat them in the client
+configuration.
+
+1. Build the image (if you haven't already):
+
+   ```bash
+   docker build -t azure-mcp-server .
+   ```
+
+2. Make sure your `.env` file is populated (see
+   [Configure environment variables](#configure-environment-variables)).
+
+3. Add this block to your MCP client configuration (adjust the path to `.env`
+   as needed):
+
+   ```json
+   {
+     "mcpServers": {
+       "azure-data": {
+         "command": "docker",
+         "args": [
+           "run", "--rm", "-i",
+           "--env-file", "/absolute/path/to/.env",
+           "azure-mcp-server"
+         ]
+       }
+     }
+   }
+   ```
+
+   The `-i` flag keeps stdin open so the client can send JSON-RPC messages to
+   the container.  `--rm` removes the container automatically when the client
+   disconnects.
+
+### Docker Compose
+
+If you prefer to manage the image through Compose, use `docker compose run`
+instead of `docker run`:
+
+```json
+{
+  "mcpServers": {
+    "azure-data": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "/absolute/path/to/docker-compose.yml",
+        "run", "--rm", "azure-mcp-server"
+      ]
+    }
+  }
+}
+```
+
+Compose reads credentials from the `.env` file in the same directory as
+`docker-compose.yml`, so no environment variables need to appear in the client
+configuration.
 
 ---
 
