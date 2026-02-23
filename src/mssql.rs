@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde_json::{Map, Value};
-use tiberius::{Client, Config, ColumnData, Query};
+use tiberius::{Client, ColumnData, Config, Query};
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncWriteCompatExt;
 
@@ -65,7 +65,11 @@ fn column_data_to_json(data: &ColumnData<'static>) -> Value {
         ColumnData::Binary(v) => v
             .as_deref()
             .map(|b| {
-                Value::String(b.iter().map(|byte| format!("{byte:02x}")).collect::<String>())
+                Value::String(
+                    b.iter()
+                        .map(|byte| format!("{byte:02x}"))
+                        .collect::<String>(),
+                )
             })
             .unwrap_or(Value::Null),
         // Temporal types: tiberius stores these as internal integer encodings and
@@ -146,9 +150,7 @@ pub async fn execute_query(cfg: &MssqlConfig, sql: &str, max_rows: u64) -> Resul
     let mut client = connect(cfg).await?;
 
     // Wrap the caller-supplied query in a TOP to prevent reading millions of rows.
-    let limited_sql = format!(
-        "SELECT TOP ({max_rows}) * FROM ({sql}) AS __mcp_query__"
-    );
+    let limited_sql = format!("SELECT TOP ({max_rows}) * FROM ({sql}) AS __mcp_query__");
 
     let rows = Query::new(limited_sql)
         .query(&mut client)
@@ -175,7 +177,7 @@ pub async fn execute_query(cfg: &MssqlConfig, sql: &str, max_rows: u64) -> Resul
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tiberius::{ColumnData, numeric::Numeric};
+    use tiberius::{numeric::Numeric, ColumnData};
 
     #[test]
     fn column_data_null_variants_become_json_null() {
@@ -195,9 +197,9 @@ mod tests {
             Value::Bool(true)
         );
         assert_eq!(
-            column_data_to_json(&ColumnData::String(Some(
-                std::borrow::Cow::Borrowed("hello")
-            ))),
+            column_data_to_json(&ColumnData::String(Some(std::borrow::Cow::Borrowed(
+                "hello"
+            )))),
             Value::String("hello".to_string())
         );
     }

@@ -1,8 +1,7 @@
 use rmcp::{
-    ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo},
-    tool, tool_handler, tool_router,
+    tool, tool_handler, tool_router, ServerHandler,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -68,9 +67,7 @@ impl ServerHandler for AzureMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             protocol_version: ProtocolVersion::LATEST,
-            capabilities: ServerCapabilities::builder()
-                .enable_tools()
-                .build(),
+            capabilities: ServerCapabilities::builder().enable_tools().build(),
             server_info: Implementation {
                 name: "azure-mcp-server".into(),
                 version: env!("CARGO_PKG_VERSION").into(),
@@ -100,10 +97,7 @@ impl AzureMcpServer {
     /// Returns a JSON array of objects with `schema` and `table_name` fields.
     #[tool(description = "List all user tables in the Azure MSSQL database.")]
     async fn mssql_list_tables(&self) -> Result<String, String> {
-        let cfg = self
-            .config
-            .require_mssql()
-            .map_err(|e| e.to_string())?;
+        let cfg = self.config.require_mssql().map_err(|e| e.to_string())?;
 
         mssql::list_tables(cfg)
             .await
@@ -121,10 +115,7 @@ impl AzureMcpServer {
         &self,
         Parameters(params): Parameters<MssqlExecuteQueryParams>,
     ) -> Result<String, String> {
-        let cfg = self
-            .config
-            .require_mssql()
-            .map_err(|e| e.to_string())?;
+        let cfg = self.config.require_mssql().map_err(|e| e.to_string())?;
 
         let max_rows = params.max_rows.unwrap_or(DEFAULT_MAX_ROWS);
 
@@ -143,10 +134,7 @@ impl AzureMcpServer {
     /// Returns a JSON array of database name strings.
     #[tool(description = "List all databases in the Azure Cosmos DB account.")]
     async fn cosmos_list_databases(&self) -> Result<String, String> {
-        let cfg = self
-            .config
-            .require_cosmos()
-            .map_err(|e| e.to_string())?;
+        let cfg = self.config.require_cosmos().map_err(|e| e.to_string())?;
 
         cosmos::list_databases(cfg)
             .await
@@ -163,18 +151,14 @@ impl AzureMcpServer {
         &self,
         Parameters(params): Parameters<CosmosListContainersParams>,
     ) -> Result<String, String> {
-        let cfg = self
-            .config
-            .require_cosmos()
-            .map_err(|e| e.to_string())?;
+        let cfg = self.config.require_cosmos().map_err(|e| e.to_string())?;
 
         let database = params
             .database
             .as_deref()
             .or(cfg.default_database.as_deref())
             .ok_or_else(|| {
-                "database parameter is required when COSMOS_DEFAULT_DATABASE is not set"
-                    .to_string()
+                "database parameter is required when COSMOS_DEFAULT_DATABASE is not set".to_string()
             })?
             .to_string();
 
@@ -194,18 +178,14 @@ impl AzureMcpServer {
         &self,
         Parameters(params): Parameters<CosmosQueryItemsParams>,
     ) -> Result<String, String> {
-        let cfg = self
-            .config
-            .require_cosmos()
-            .map_err(|e| e.to_string())?;
+        let cfg = self.config.require_cosmos().map_err(|e| e.to_string())?;
 
         let database = params
             .database
             .as_deref()
             .or(cfg.default_database.as_deref())
             .ok_or_else(|| {
-                "database parameter is required when COSMOS_DEFAULT_DATABASE is not set"
-                    .to_string()
+                "database parameter is required when COSMOS_DEFAULT_DATABASE is not set".to_string()
             })?
             .to_string();
 
@@ -283,10 +263,25 @@ mod tests {
         let tools = server.tool_router.list_all();
         let names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
 
-        assert!(names.contains(&"mssql_list_tables"), "mssql_list_tables missing");
-        assert!(names.contains(&"mssql_execute_query"), "mssql_execute_query missing");
-        assert!(names.contains(&"cosmos_list_databases"), "cosmos_list_databases missing");
-        assert!(names.contains(&"cosmos_list_containers"), "cosmos_list_containers missing");
-        assert!(names.contains(&"cosmos_query_items"), "cosmos_query_items missing");
+        assert!(
+            names.contains(&"mssql_list_tables"),
+            "mssql_list_tables missing"
+        );
+        assert!(
+            names.contains(&"mssql_execute_query"),
+            "mssql_execute_query missing"
+        );
+        assert!(
+            names.contains(&"cosmos_list_databases"),
+            "cosmos_list_databases missing"
+        );
+        assert!(
+            names.contains(&"cosmos_list_containers"),
+            "cosmos_list_containers missing"
+        );
+        assert!(
+            names.contains(&"cosmos_query_items"),
+            "cosmos_query_items missing"
+        );
     }
 }
