@@ -1,4 +1,8 @@
 # MCP-Server
+
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/jstanbri/MCP-Server)](https://github.com/jstanbri/MCP-Server/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 MCP-Server built for clients with Azure SQL / Cosmos datastores
 
 ## Overview
