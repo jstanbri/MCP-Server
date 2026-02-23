@@ -133,6 +133,30 @@ The container reads from **stdin** and writes MCP JSON-RPC responses to
 
 ---
 
+## Docker Compose
+
+`docker-compose.yml` wraps the Docker build and environment variable loading
+in a single command.  It reads all variables from `.env` (see
+[Configure environment variables](#configure-environment-variables) above) and
+includes a health check that verifies the binary is present and executable.
+
+### Start with Docker Compose
+
+```bash
+# Build the image and start the service
+docker compose up --build
+```
+
+The service keeps stdin open so it is ready to accept MCP JSON-RPC messages.
+To run in the background add the `--detach` flag:
+
+```bash
+docker compose up --build --detach
+docker compose down   # stop and remove containers
+```
+
+---
+
 ## Running
 
 ```bash
