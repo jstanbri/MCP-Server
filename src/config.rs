@@ -52,7 +52,9 @@ impl Config {
             let key = env::var("COSMOS_KEY").ok();
             let default_database = env::var("COSMOS_DEFAULT_DATABASE").ok();
             if key.is_some() {
-                tracing::info!("Cosmos DB endpoint + account key found — Cosmos tools will be available");
+                tracing::info!(
+                    "Cosmos DB endpoint + account key found — Cosmos tools will be available"
+                );
             } else {
                 tracing::warn!(
                     "COSMOS_ENDPOINT is set but COSMOS_KEY is missing — \

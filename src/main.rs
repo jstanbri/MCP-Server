@@ -3,8 +3,8 @@ mod cosmos;
 mod mssql;
 mod server;
 
-use rmcp::ServiceExt;
 use rmcp::transport::stdio;
+use rmcp::ServiceExt;
 use server::AzureMcpServer;
 
 #[tokio::main]
@@ -18,10 +18,7 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
 
-    tracing::info!(
-        "Starting azure-mcp-server v{}",
-        env!("CARGO_PKG_VERSION")
-    );
+    tracing::info!("Starting azure-mcp-server v{}", env!("CARGO_PKG_VERSION"));
 
     let config = config::Config::from_env()?;
     let server = AzureMcpServer::new(config);
